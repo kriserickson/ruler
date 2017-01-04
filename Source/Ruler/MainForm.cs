@@ -31,42 +31,31 @@ namespace Ruler
 		private MenuItem _lockedMenuItem;
 	    private int _position;
 
+	    private static void Main(params string[] args)
+	    {
+	        Application.EnableVisualStyles();
+	        Application.SetCompatibleTextRenderingDefault(false);
 
-	    public MainForm()
-		{
-			RulerInfo rulerInfo = RulerInfo.GetDefaultRulerInfo();
+	        // ToDo save rulerInfo to a config and restore it...
+	        var mainForm = new MainForm(args.Length == 0  ? RulerInfo.GetDefaultRulerInfo() :  RulerInfo.CovertToRulerInfo(args));
+	        Application.Run(mainForm);
+	    }
 
-			Init(rulerInfo);
-		}
 
-		public MainForm(RulerInfo rulerInfo)
-		{
-			Init(rulerInfo);
-		}
-
-		public bool IsVertical
-		{
-			get { return _verticalMenuItem.Checked; }
-			set { _verticalMenuItem.Checked = value; }
-		}
-
-		public bool IsLocked
-		{
-			get;
-			set;
-		}
-
-		private void Init(RulerInfo rulerInfo)
+	    public MainForm(RulerInfo rulerInfo)
 		{
 			SetStyle(ControlStyles.ResizeRedraw, true);
 			UpdateStyles();
 
 			ResourceManager resources = new ResourceManager(typeof(MainForm));
-			Icon = ((Icon)(resources.GetObject("$this.Icon")));
+			Icon = (Icon)(resources.GetObject("$this.Icon"));
 
-			SetUpMenu();
+		    // We have to setup the menu before copying rulerInfo so we pass opacity in otherwise it starts off as 1...
+			SetUpMenu(rulerInfo.Opacity);
 
 			Text = "Ruler";
+
+		    // TODO: Make color default...
 			BackColor = Color.White;
 
 			rulerInfo.CopyInto(this);
@@ -79,10 +68,24 @@ namespace Ruler
 		    SetToolTip();
 
 
+
+
 			SetStyle(ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
 		}
 
-		private RulerInfo GetRulerInfo()
+	    public bool IsVertical
+	    {
+	        get { return _verticalMenuItem.Checked; }
+	        set { _verticalMenuItem.Checked = value; }
+	    }
+
+	    public bool IsLocked
+	    {
+	        get;
+	        set;
+	    }
+
+	    private RulerInfo GetRulerInfo()
 		{
 			RulerInfo rulerInfo = new RulerInfo();
 
@@ -91,11 +94,11 @@ namespace Ruler
 			return rulerInfo;
 		}
 
-		private void SetUpMenu()
+		private void SetUpMenu(double opacity)
 		{
 			AddMenuItem("Stay On Top");
 			_verticalMenuItem = AddMenuItem("Vertical");
-			MenuItem opacityMenuItem = AddMenuItem("Opacity");
+			var opacityMenuItem = AddMenuItem("Opacity");
 			_lockedMenuItem = AddMenuItem("Lock resizing", Shortcut.None, LockHandler);
 			AddMenuItem("Set size...", Shortcut.None, SetWidthHeightHandler);
 			AddMenuItem("Duplicate", Shortcut.None, DuplicateHandler);
@@ -106,8 +109,8 @@ namespace Ruler
 
 			for (int i = 10; i <= 100; i += 10)
 			{
-				MenuItem subMenu = new MenuItem(i + "%");
-				subMenu.Checked = Math.Abs(i - Opacity * 100) < TOLERANCE;
+				var subMenu = new MenuItem(i + "%");
+				subMenu.Checked = Math.Abs(i - (opacity * 100)) < TOLERANCE;
 				subMenu.Click += OpacityMenuHandler;
 				opacityMenuItem.MenuItems.Add(subMenu);
 			}
@@ -165,7 +168,13 @@ namespace Ruler
 			return mi;
 		}
 
-		protected override void OnMouseDown(MouseEventArgs e)
+	    protected override void OnDoubleClick(EventArgs e)
+	    {
+	        ChangeOrientation();
+	        base.OnDoubleClick(e);
+	    }
+
+	    protected override void OnMouseDown(MouseEventArgs e)
 		{
 			_offset = new Point(MousePosition.X - Location.X, MousePosition.Y - Location.Y);
 			_mouseDownPoint = MousePosition;
@@ -495,15 +504,6 @@ namespace Ruler
 			g.DrawString(text, Font, Brushes.Black, xPos, formHeight - height - Font.Height);
 		}
 
-		private static void Main(params string[] args)
-		{
-			Application.EnableVisualStyles();
-			Application.SetCompatibleTextRenderingDefault(false);
-
-			MainForm mainForm = args.Length == 0 ? new MainForm() : new MainForm(RulerInfo.CovertToRulerInfo(args));
-
-			Application.Run(mainForm);
-		}
 
 		private void OpacityMenuHandler(object sender, EventArgs e)
 		{
@@ -549,7 +549,8 @@ namespace Ruler
 					break;
 
 				case "About...":
-					string message = string.Format("Ruler v{0} by Jeff Key\nwww.sliver.com\nIcon by Kristen Magee @ www.kbecca.com", Application.ProductVersion);
+					string message =
+					    $"Ruler v{Application.ProductVersion} by Jeff Key\nwww.sliver.com\nIcon by Kristen Magee @ www.kbecca.com";
 					MessageBox.Show(message, "About Ruler", MessageBoxButtons.OK, MessageBoxIcon.Information);
 					break;
 
@@ -566,5 +567,19 @@ namespace Ruler
 			Width = Height;
 			Height = width;
 		}
-	}
+
+        private void InitializeComponent()
+        {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
+            this.SuspendLayout();
+            // 
+            // MainForm
+            // 
+            this.ClientSize = new System.Drawing.Size(284, 261);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.Name = "MainForm";
+            this.ResumeLayout(false);
+
+        }
+    }
 }

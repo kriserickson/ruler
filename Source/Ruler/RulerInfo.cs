@@ -47,7 +47,7 @@
 
 		public string ConvertToParameters()
 		{
-			return string.Format("{0} {1} {2} {3} {5} {6}", this.Width, this.Height, this.IsVertical, this.Opacity, this.IsLocked, this.TopMost);
+			return string.Format("{0} {1} {2} {3} {5} {6}", Width, Height, IsVertical, Opacity, IsLocked, TopMost);
 		}
 
 		public static RulerInfo CovertToRulerInfo(string[] args)
@@ -59,30 +59,29 @@
 			string isLocked = args[4];
 			string topMost = args[5];
 
-			RulerInfo rulerInfo = new RulerInfo();
 
-			rulerInfo.Width = int.Parse(width);
-			rulerInfo.Height = int.Parse(height);
-			rulerInfo.IsVertical = bool.Parse(isVertical);
-			rulerInfo.Opacity = double.Parse(opacity);
-			rulerInfo.IsLocked = bool.Parse(isLocked);
-			rulerInfo.TopMost = bool.Parse(topMost);
-
-			return rulerInfo;
+		    return new RulerInfo
+		    {
+		        Width = int.Parse(width),
+		        Height = int.Parse(height),
+		        IsVertical = bool.Parse(isVertical),
+		        Opacity = double.Parse(opacity),
+		        IsLocked = bool.Parse(isLocked),
+		        TopMost = bool.Parse(topMost)
+		    };
 		}
 
 		public static RulerInfo GetDefaultRulerInfo()
 		{
-			RulerInfo rulerInfo = new RulerInfo();
-
-			rulerInfo.Width = 400;
-			rulerInfo.Height = 75;
-			rulerInfo.Opacity = 0.65;
-			rulerInfo.IsLocked = false;
-			rulerInfo.IsVertical = false;
-			rulerInfo.TopMost = false;
-
-			return rulerInfo;
+		    return new RulerInfo
+		    {
+		        Width = 400,
+		        Height = 75,
+		        Opacity = 0.70,
+		        IsLocked = false,
+		        IsVertical = false,
+		        TopMost = false
+		    };
 		}
 	}
 
