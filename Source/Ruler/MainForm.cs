@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Reflection;
 using System.Resources;
 using System.Windows.Forms;
 
@@ -17,33 +18,36 @@ namespace Ruler
 
 		#endregion ResizeRegion enum
 
-		private ToolTip _toolTip = new ToolTip();
+	    private const double TOLERANCE = 0.001;
+
+	    private readonly ToolTip _toolTip = new ToolTip();
 		private Point _offset;
 		private Rectangle _mouseDownRect;
 		private int _resizeBorderWidth = 5;
 		private Point _mouseDownPoint;
 		private ResizeRegion _resizeRegion = ResizeRegion.None;
-		private ContextMenu _menu = new ContextMenu();
+		private readonly ContextMenu _menu = new ContextMenu();
 		private MenuItem _verticalMenuItem;
-		private MenuItem _toolTipMenuItem;
 		private MenuItem _lockedMenuItem;
+	    private int _position;
 
-		public MainForm()
+
+	    public MainForm()
 		{
 			RulerInfo rulerInfo = RulerInfo.GetDefaultRulerInfo();
 
-			this.Init(rulerInfo);
+			Init(rulerInfo);
 		}
 
 		public MainForm(RulerInfo rulerInfo)
 		{
-			this.Init(rulerInfo);
+			Init(rulerInfo);
 		}
 
 		public bool IsVertical
 		{
-			get { return this._verticalMenuItem.Checked; }
-			set { this._verticalMenuItem.Checked = value; }
+			get { return _verticalMenuItem.Checked; }
+			set { _verticalMenuItem.Checked = value; }
 		}
 
 		public bool IsLocked
@@ -52,44 +56,30 @@ namespace Ruler
 			set;
 		}
 
-		public bool ShowToolTip
-		{
-			get
-			{
-				return this._toolTipMenuItem.Checked;
-			}
-			set
-			{
-				this._toolTipMenuItem.Checked = value;
-
-				if (value)
-				{
-					this.SetToolTip();
-				}
-			}
-		}
-
 		private void Init(RulerInfo rulerInfo)
 		{
-			this.SetStyle(ControlStyles.ResizeRedraw, true);
-			this.UpdateStyles();
+			SetStyle(ControlStyles.ResizeRedraw, true);
+			UpdateStyles();
 
 			ResourceManager resources = new ResourceManager(typeof(MainForm));
-			this.Icon = ((Icon)(resources.GetObject("$this.Icon")));
+			Icon = ((Icon)(resources.GetObject("$this.Icon")));
 
-			this.SetUpMenu();
+			SetUpMenu();
 
-			this.Text = "Ruler";
-			this.BackColor = Color.White;
+			Text = "Ruler";
+			BackColor = Color.White;
 
 			rulerInfo.CopyInto(this);
 
-			this.FormBorderStyle = FormBorderStyle.None;
+			FormBorderStyle = FormBorderStyle.None;
 
-			this.ContextMenu = _menu;
-			this.Font = new Font("Tahoma", 10);
+			ContextMenu = _menu;
+			Font = new Font("Tahoma", 10);
 
-			this.SetStyle(ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
+		    SetToolTip();
+
+
+			SetStyle(ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
 		}
 
 		private RulerInfo GetRulerInfo()
@@ -103,56 +93,55 @@ namespace Ruler
 
 		private void SetUpMenu()
 		{
-			this.AddMenuItem("Stay On Top");
-			this._verticalMenuItem = this.AddMenuItem("Vertical");
-			this._toolTipMenuItem = this.AddMenuItem("Tool Tip");
-			MenuItem opacityMenuItem = this.AddMenuItem("Opacity");
-			this._lockedMenuItem = this.AddMenuItem("Lock resizing", Shortcut.None, this.LockHandler);
-			this.AddMenuItem("Set size...", Shortcut.None, this.SetWidthHeightHandler);
-			this.AddMenuItem("Duplicate", Shortcut.None, this.DuplicateHandler);
-			this.AddMenuItem("-");
-			this.AddMenuItem("About...");
-			this.AddMenuItem("-");
-			this.AddMenuItem("Exit");
+			AddMenuItem("Stay On Top");
+			_verticalMenuItem = AddMenuItem("Vertical");
+			MenuItem opacityMenuItem = AddMenuItem("Opacity");
+			_lockedMenuItem = AddMenuItem("Lock resizing", Shortcut.None, LockHandler);
+			AddMenuItem("Set size...", Shortcut.None, SetWidthHeightHandler);
+			AddMenuItem("Duplicate", Shortcut.None, DuplicateHandler);
+			AddMenuItem("-");
+			AddMenuItem("About...");
+			AddMenuItem("-");
+			AddMenuItem("Exit");
 
 			for (int i = 10; i <= 100; i += 10)
 			{
 				MenuItem subMenu = new MenuItem(i + "%");
-				subMenu.Checked = i == Opacity * 100;
-				subMenu.Click += new EventHandler(OpacityMenuHandler);
+				subMenu.Checked = Math.Abs(i - Opacity * 100) < TOLERANCE;
+				subMenu.Click += OpacityMenuHandler;
 				opacityMenuItem.MenuItems.Add(subMenu);
 			}
 		}
 
 		private void SetWidthHeightHandler(object sender, EventArgs e)
 		{
-			SetSizeForm form = new SetSizeForm(this.Width, this.Height);
+			SetSizeForm form = new SetSizeForm(Width, Height);
 
-			if (this.TopMost)
+			if (TopMost)
 			{
 				form.TopMost = true;
 			}
 
-			if (form.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+			if (form.ShowDialog() == DialogResult.OK)
 			{
 				Size size = form.GetNewSize();
 
-				this.Width = size.Width;
-				this.Height = size.Height;
+				Width = size.Width;
+				Height = size.Height;
 			}
 		}
 
 		private void LockHandler(object sender, EventArgs e)
 		{
-			this.IsLocked = !this.IsLocked;
-			this._lockedMenuItem.Checked = this.IsLocked;
+			IsLocked = !IsLocked;
+			_lockedMenuItem.Checked = IsLocked;
 		}
 
 		private void DuplicateHandler(object sender, EventArgs e)
 		{
-			string exe = System.Reflection.Assembly.GetExecutingAssembly().Location;
+			string exe = Assembly.GetExecutingAssembly().Location;
 
-			RulerInfo rulerInfo = this.GetRulerInfo();
+			RulerInfo rulerInfo = GetRulerInfo();
 
 			ProcessStartInfo startInfo = new ProcessStartInfo(exe, rulerInfo.ConvertToParameters());
 
@@ -163,13 +152,13 @@ namespace Ruler
 
 		private MenuItem AddMenuItem(string text)
 		{
-			return AddMenuItem(text, Shortcut.None, this.MenuHandler);
+			return AddMenuItem(text, Shortcut.None, MenuHandler);
 		}
 
 		private MenuItem AddMenuItem(string text, Shortcut shortcut, EventHandler handler)
 		{
-			MenuItem mi = new MenuItem(text);
-			mi.Click += new EventHandler(handler);
+			var mi = new MenuItem(text);
+			mi.Click += handler;
 			mi.Shortcut = shortcut;
 			_menu.MenuItems.Add(mi);
 
@@ -193,6 +182,24 @@ namespace Ruler
 
 		protected override void OnMouseMove(MouseEventArgs e)
 		{
+		    if (IsVertical)
+		    {
+		        if (_position != e.Y)
+		        {
+		            _position = e.Y;
+		            SetToolTip();
+		        }
+		    }
+		    else
+		    {
+		        if (_position != e.X)
+		        {
+		            _position = e.X;
+		            SetToolTip();
+		        }
+		    }
+
+
 			if (_resizeRegion != ResizeRegion.None)
 			{
 				HandleResize();
@@ -204,6 +211,8 @@ namespace Ruler
 			resizeInnerRect.Inflate(-_resizeBorderWidth, -_resizeBorderWidth);
 
 			bool inResizableArea = ClientRectangle.Contains(clientCursorPos) && !resizeInnerRect.Contains(clientCursorPos);
+
+
 
 			if (inResizableArea)
 			{
@@ -229,19 +238,9 @@ namespace Ruler
 			base.OnMouseMove(e);
 		}
 
-		protected override void OnResize(EventArgs e)
-		{
-			if (this.ShowToolTip)
-			{
-				this.SetToolTip();
-			}
-
-			base.OnResize(e);
-		}
-
 		private void SetToolTip()
 		{
-			_toolTip.SetToolTip(this, string.Format("Width: {0} pixels\nHeight: {1} pixels", Width, Height));
+			_toolTip.SetToolTip(this, _position.ToString());
 		}
 
 		protected override void OnKeyDown(KeyEventArgs e)
@@ -341,32 +340,45 @@ namespace Ruler
 
 		private void HandleResize()
 		{
-			if (this.IsLocked)
+			if (IsLocked)
 			{
 				return;
 			}
 
-			switch (_resizeRegion)
-			{
-				case ResizeRegion.E:
-					{
-						int diff = MousePosition.X - _mouseDownPoint.X;
-						Width = _mouseDownRect.Width + diff;
-						break;
-					}
-				case ResizeRegion.S:
-					{
-						int diff = MousePosition.Y - _mouseDownPoint.Y;
-						Height = _mouseDownRect.Height + diff;
-						break;
-					}
-				case ResizeRegion.SE:
-					{
-						Width = _mouseDownRect.Width + MousePosition.X - _mouseDownPoint.X;
-						Height = _mouseDownRect.Height + MousePosition.Y - _mouseDownPoint.Y;
-						break;
-					}
-			}
+		    int newWidth = Width;
+		    int newHeight = Height;
+
+		    switch (_resizeRegion)
+		    {
+
+		        case ResizeRegion.E:
+		        {
+		            int diff = MousePosition.X - _mouseDownPoint.X;
+		            newWidth = _mouseDownRect.Width + diff;
+		            break;
+		        }
+		        case ResizeRegion.S:
+		        {
+		            int diff = MousePosition.Y - _mouseDownPoint.Y;
+		            newHeight = _mouseDownRect.Height + diff;
+		            break;
+		        }
+		        case ResizeRegion.SE:
+		        {
+		            newWidth = _mouseDownRect.Width + MousePosition.X - _mouseDownPoint.X;
+		            newHeight = _mouseDownRect.Height + MousePosition.Y - _mouseDownPoint.Y;
+		            break;
+		        }
+		    }
+
+		    if (newWidth > 50 && newWidth < 200)
+		    {
+		        Width = newWidth;
+		    }
+		    if (newHeight > 50)
+		    {
+		        Height = newHeight;
+		    }
 		}
 
 		private void SetResizeCursor(ResizeRegion region)
@@ -396,23 +408,20 @@ namespace Ruler
 
 		private ResizeRegion GetResizeRegion(Point clientCursorPos)
 		{
-			if (clientCursorPos.Y <= _resizeBorderWidth)
-			{
-				if (clientCursorPos.X <= _resizeBorderWidth) return ResizeRegion.NW;
-				else if (clientCursorPos.X >= Width - _resizeBorderWidth) return ResizeRegion.NE;
-				else return ResizeRegion.N;
-			}
-			else if (clientCursorPos.Y >= Height - _resizeBorderWidth)
-			{
-				if (clientCursorPos.X <= _resizeBorderWidth) return ResizeRegion.SW;
-				else if (clientCursorPos.X >= Width - _resizeBorderWidth) return ResizeRegion.SE;
-				else return ResizeRegion.S;
-			}
-			else
-			{
-				if (clientCursorPos.X <= _resizeBorderWidth) return ResizeRegion.W;
-				else return ResizeRegion.E;
-			}
+		    if (clientCursorPos.Y <= _resizeBorderWidth)
+		    {
+		        if (clientCursorPos.X <= _resizeBorderWidth) return ResizeRegion.NW;
+		        if (clientCursorPos.X >= Width - _resizeBorderWidth) return ResizeRegion.NE;
+		        return ResizeRegion.N;
+		    }
+		    if (clientCursorPos.Y >= Height - _resizeBorderWidth)
+		    {
+		        if (clientCursorPos.X <= _resizeBorderWidth) return ResizeRegion.SW;
+		        if (clientCursorPos.X >= Width - _resizeBorderWidth) return ResizeRegion.SE;
+		        return ResizeRegion.S;
+		    }
+		    if (clientCursorPos.X <= _resizeBorderWidth) return ResizeRegion.W;
+		    return ResizeRegion.E;
 		}
 
 		protected override void OnPaint(PaintEventArgs e)
@@ -491,16 +500,7 @@ namespace Ruler
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
 
-			MainForm mainForm;
-
-			if (args.Length == 0)
-			{
-				mainForm = new MainForm();
-			}
-			else
-			{
-				mainForm = new MainForm(RulerInfo.CovertToRulerInfo(args));
-			}
+			MainForm mainForm = args.Length == 0 ? new MainForm() : new MainForm(RulerInfo.CovertToRulerInfo(args));
 
 			Application.Run(mainForm);
 		}
@@ -515,7 +515,7 @@ namespace Ruler
 
 		private void UncheckMenuItem(Menu parent)
 		{
-			if (parent == null || parent.MenuItems == null)
+			if (parent == null)
 			{
 				return;
 			}
@@ -537,10 +537,6 @@ namespace Ruler
 			{
 				case "Exit":
 					Close();
-					break;
-
-				case "Tool Tip":
-					ShowToolTip = !ShowToolTip;
 					break;
 
 				case "Vertical":
@@ -565,10 +561,10 @@ namespace Ruler
 
 		private void ChangeOrientation()
 		{
-			this.IsVertical = !IsVertical;
+			IsVertical = !IsVertical;
 			int width = Width;
-			this.Width = Height;
-			this.Height = width;
+			Width = Height;
+			Height = width;
 		}
 	}
 }

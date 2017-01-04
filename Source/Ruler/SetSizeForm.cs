@@ -1,38 +1,34 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 
 namespace Ruler
 {
 	public partial class SetSizeForm : Form
 	{
-		private int originalWidth;
-		private int originalHeight;
+		private readonly int _originalWidth;
+		private readonly int _originalHeight;
 
 		public SetSizeForm(int initWidth, int initHeight)
 		{
-			this.InitializeComponent();
+			InitializeComponent();
 
-			this.originalWidth = initWidth;
-			this.originalHeight = initHeight;
+			_originalWidth = initWidth;
+			_originalHeight = initHeight;
 
-			this.txtWidth.Text = initWidth.ToString();
-			this.txtHeight.Text = initHeight.ToString();
+			txtWidth.Text = initWidth.ToString();
+			txtHeight.Text = initHeight.ToString();
 		}
 
 		private void BtnCancelClick(object sender, EventArgs e)
 		{
-			this.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-			this.Close();
+			DialogResult = DialogResult.Cancel;
+			Close();
 		}
 
 		private void BtnOkClick(object sender, EventArgs e)
 		{
-			this.DialogResult = System.Windows.Forms.DialogResult.OK;
+			DialogResult = DialogResult.OK;
 		}
 
 		public Size GetNewSize()
@@ -42,8 +38,8 @@ namespace Ruler
 
 			Size size = new Size();
 
-			size.Width = int.TryParse(this.txtWidth.Text, out width) ? width : originalWidth;
-			size.Height = int.TryParse(this.txtHeight.Text, out height) ? height : originalHeight;
+			size.Width = int.TryParse(txtWidth.Text, out width) ? width : _originalWidth;
+			size.Height = int.TryParse(txtHeight.Text, out height) ? height : _originalHeight;
 
 			return size;
 		}

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Ruler
+﻿namespace Ruler
 {
 	public interface IRulerInfo
 	{
@@ -25,12 +21,6 @@ namespace Ruler
 		}
 
 		double Opacity
-		{
-			get;
-			set;
-		}
-
-		bool ShowToolTip
 		{
 			get;
 			set;
