@@ -103,8 +103,6 @@ namespace Ruler
 			AddMenuItem("Set size...", Shortcut.None, SetWidthHeightHandler);
 			AddMenuItem("Duplicate", Shortcut.None, DuplicateHandler);
 			AddMenuItem("-");
-			AddMenuItem("About...");
-			AddMenuItem("-");
 			AddMenuItem("Exit");
 
 			for (int i = 10; i <= 100; i += 10)
@@ -548,12 +546,7 @@ namespace Ruler
 					TopMost = mi.Checked;
 					break;
 
-				case "About...":
-					string message =
-					    $"Ruler v{Application.ProductVersion} by Jeff Key\nwww.sliver.com\nIcon by Kristen Magee @ www.kbecca.com";
-					MessageBox.Show(message, "About Ruler", MessageBoxButtons.OK, MessageBoxIcon.Information);
-					break;
-
+				
 				default:
 					MessageBox.Show("Unknown menu item.");
 					break;
